@@ -12,7 +12,15 @@ over.setAttribute('aria-hidden', 'true');
 over.querySelectorAll('a').forEach(a => a.tabIndex = -1);
 document.body.appendChild(over);
 
-let w = innerWidth, h = innerHeight, target = 0, cur = 0;
+// lê a cor guardada (0 = branco, 1 = preto) para a home arrancar igual às outras páginas
+let saved = 0;
+try { saved = (+localStorage.getItem('theme') || 0) % N; } catch (e) {}
+let last = -1;
+function save(v) {
+  if (v !== last) { last = v; try { localStorage.setItem('theme', v); } catch (e) {} }
+}
+
+let w = innerWidth, h = innerHeight, target = saved, cur = saved;
 addEventListener('resize', () => { w = innerWidth; h = innerHeight; });
 
 const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
@@ -26,16 +34,17 @@ function render(t) {
   paint(base, PALETTE[i]);
   paint(over, PALETTE[(i + 1) % N]);
   document.body.style.background = PALETTE[i][0];
+  save(g >= .9 ? (i + 1) % N : i);
 
   if (g <= 0) { over.style.clipPath = 'circle(0px)'; }
   else {
-    const r0 = h * SIZE;                    // raio inicial (círculo visível)
-    const R = Math.hypot(w, h) / 2 + 2;     // raio para cobrir o ecrã todo
+    const r0 = h * SIZE;
+    const R = Math.hypot(w, h) / 2 + 2;
     let cx, r;
-    if (g < ENTER) {                        // fase 1: o círculo atravessa da esquerda até ao centro
+    if (g < ENTER) {
       const p = ease(g / ENTER);
       cx = -r0 + (w / 2 + r0) * p; r = r0;
-    } else {                                // fase 2: cresce até cobrir tudo
+    } else {
       const p = ease((g - ENTER) / (1 - ENTER));
       cx = w / 2; r = r0 + (R - r0) * p;
     }
