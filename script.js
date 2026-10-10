@@ -72,3 +72,4 @@ addEventListener('touchstart', e => ty = e.touches[0].clientY, { passive: true }
 addEventListener('touchmove', e => { const y = e.touches[0].clientY; target += (ty - y) / (h * 1.2); ty = y; }, { passive: true });
 
 (function loop() { cur += (target - cur) * .12; render(cur); requestAnimationFrame(loop); })();
+
