@@ -17,7 +17,11 @@ let saved = 0;
 try { saved = (+localStorage.getItem('theme') || 0) % N; } catch (e) {}
 let last = -1;
 function save(v) {
-  if (v !== last) { last = v; try { localStorage.setItem('theme', v); } catch (e) {} }
+  if (v !== last) {
+    last = v;
+    try { localStorage.setItem('theme', v); } catch (e) {}
+    document.cookie = 'theme=' + v + '; path=/; max-age=31536000';
+  }
 }
 
 let w = innerWidth, h = innerHeight, target = saved, cur = saved;
