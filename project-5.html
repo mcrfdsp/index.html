@@ -29,6 +29,15 @@
 .btn:disabled{opacity:.3;cursor:default}
 .row{display:flex;gap:10px}
 .row .btn{padding:12px 8px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px}
+.modal[hidden]{display:none}
+.card{position:relative;background:var(--bg);color:var(--fg);border:1.5px solid currentColor;border-radius:28px;padding:20px;width:100%;max-width:360px;max-height:94vh;overflow:auto}
+.card img{width:100%;max-height:44vh;object-fit:contain;border-radius:16px;display:block;margin:6px 0 16px}
+.card .x{position:absolute;top:10px;right:14px;background:none;border:0;color:inherit;font-size:26px;line-height:1;cursor:pointer}
+.card h2{font-size:13px;font-weight:500;text-align:center;margin-top:2px}
+.card .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card .grid .btn{margin:0}
+.card .hint{margin-top:12px;font-size:11px;text-align:center;text-transform:none;min-height:1.2em;opacity:.8}
 @media(max-width:860px){
   .mm{grid-template-columns:1fr;justify-items:center;gap:20px}
   .stage{height:auto;width:min(100%,360px)}
@@ -64,6 +73,20 @@
     </div>
   </main>
 </div>
+<div class="modal" id="modal" hidden>
+  <div class="card">
+    <button class="x" id="close" aria-label="Fechar">×</button>
+    <h2>Your monster</h2>
+    <img id="shot" alt="O teu monstro">
+    <div class="grid">
+      <button class="btn" id="share" hidden>Share…</button>
+      <button class="btn" id="wa">WhatsApp</button>
+      <button class="btn" id="gm">Gmail</button>
+      <button class="btn" id="dl">Download</button>
+    </div>
+    <p class="hint" id="hint"></p>
+  </div>
+</div>
 <script>
 // ---------- DADOS ----------
 const COLORS=['#FFDD57','#00BF63','#FF3131','#0049AD','#FF751F','#FF66C4','#B0B0B0','#38B6FF'];
@@ -71,7 +94,7 @@ const BGS=[ // img = ficheiro na pasta images/ ; c = cor de reserva enquanto nã
   {img:'bg-1.jpg',c:'#9fd0f0'},{c:'#eeeeee'},{img:'bg-3.jpg',c:'#b9b9b3'},{img:'bg-4.jpg',c:'#4aa39b'},
   {img:'bg-5.jpg',c:'#b5533c'},{img:'bg-6.jpg',c:'#6aa7c9'},{img:'bg-7.jpg',c:'#a9754a'},{img:'bg-8.jpg',c:'#c9a26b'}];
 const CATS=[{k:'shape',n:'Shapes'},{k:'color',n:'Color'},{k:'eyes',n:'Eyes'},{k:'mouth',n:'Mouth'},{k:'bg',n:'Background'}];
-const INK='#111', ST=`stroke="${INK}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"`;
+const INK='#111', ST=`stroke="${INK}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"`, ST2=`stroke="${INK}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"`;
 
 const wavy=(f,n=140)=>{let d='';for(let i=0;i<n;i++){const a=i/n*Math.PI*2,r=f(a);d+=(i?'L':'M')+(100+r*Math.cos(a)).toFixed(1)+' '+(100+r*Math.sin(a)).toFixed(1)}return d+'Z'};
 const pixel=c=>{let s='';for(let y=0;y<16;y++)for(let x=0;x<16;x++){const cx=25+x*10,cy=25+y*10;if(Math.hypot(cx-100,cy-100)<80)s+=`<rect x="${cx-5}" y="${cy-5}" width="10" height="10" fill="${c}" stroke="${c}" stroke-width=".6"/>`}return s};
@@ -103,11 +126,11 @@ const halo=d=>`<path d="${d}" fill="none" stroke="#fff" stroke-width="9" stroke-
 const MOUTHS=[
  ()=>halo('M-24 -2Q0 16 24 -2'),
  ()=>`<path d="M-15 16Q-15 -16 0 -16Q15 -16 15 16Z" fill="${INK}" ${ST}/><rect x="-5" y="-12" width="10" height="7" rx="2" fill="#fff"/>`,
- ()=>`<rect x="-26" y="-10" width="52" height="22" rx="9" fill="#fff" ${ST}/><path d="M-13 -10V12M0 -10V12M13 -10V12M-26 1H26" fill="none" ${ST} stroke-width="2"/>`,
+ ()=>`<rect x="-26" y="-10" width="52" height="22" rx="9" fill="#fff" ${ST}/><path d="M-13 -10V12M0 -10V12M13 -10V12M-26 1H26" fill="none" ${ST2}/>`,
  ()=>`<ellipse rx="17" ry="20" fill="${INK}" ${ST}/><ellipse cy="12" rx="9" ry="6" fill="#fff"/><rect x="-5" y="-17" width="10" height="6" rx="2" fill="#fff"/>`,
  ()=>halo('M-24 8Q0 -10 24 8'),
  ()=>`<path d="M-20 -6H20A20 20 0 0 1 -20 -6Z" fill="${INK}" ${ST}/><ellipse cx="6" cy="14" rx="9" ry="8" fill="#fff" ${ST}/>`,
- ()=>`<path d="M-26 -6Q0 4 26 -6Q22 22 0 22Q-22 22 -26 -6Z" fill="#fff" ${ST}/><path d="M-22 4Q0 12 22 4" fill="none" ${ST} stroke-width="2"/>`,
+ ()=>`<path d="M-26 -6Q0 4 26 -6Q22 22 0 22Q-22 22 -26 -6Z" fill="#fff" ${ST}/><path d="M-22 4Q0 12 22 4" fill="none" ${ST2}/>`,
  ()=>`<path d="M-20 -8Q0 -16 20 -8Q24 8 8 10Q6 22 -2 22Q-8 12 -20 -8Z" fill="#fff" ${ST}/>`];
 
 // ---------- ESTADO ----------
@@ -150,16 +173,18 @@ addEventListener('keydown',e=>{if(e.key==='ArrowLeft')go(-1);if(e.key==='ArrowRi
 $('undo').onclick=()=>{if(hi>0){hi--;S={...hist[hi]};refresh()}};
 $('redo').onclick=()=>{if(hi<hist.length-1){hi++;S={...hist[hi]};refresh()}};
 
-// ---------- GUARDAR COMO IMAGEM ----------
-$('save').onclick=()=>{
+// ---------- GUARDAR / PARTILHAR ----------
+let blob=null;
+const MSG='Olha o monstro que fiz! 👾';
+function makeImage(cb){
   const W=800,H=1000,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
   const finish=()=>{
     const img=new Image();
     img.onload=()=>{
       x.drawImage(img,120,220,560,560);
-      try{cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='my-monster.png';a.click()})}
-      catch(e){alert('Para guardar o monstro, abre o site pelo link online (GitHub Pages).')}
+      try{cv.toBlob(b=>cb(b))}catch(e){cb(null)}
     };
+    img.onerror=()=>cb(null);
     img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(monsterSVG());
   };
   const fill=c=>{x.fillStyle=c;x.fillRect(0,0,W,H)};
@@ -170,7 +195,28 @@ $('save').onclick=()=>{
   const im=new Image();
   im.onload=()=>{const k=Math.max(W/im.width,H/im.height);x.drawImage(im,(W-im.width*k)/2,(H-im.height*k)/2,im.width*k,im.height*k);finish()};
   im.onerror=finish; im.src='images/'+b.img;
-};
+}
+const hint=t=>$('hint').textContent=t;
+const getFile=()=>new File([blob],'my-monster.png',{type:'image/png'});
+// copia a imagem para colares (Cmd+V) na conversa
+function copyImage(){
+  try{navigator.clipboard.write([new ClipboardItem({'image/png':blob})])
+    .then(()=>hint('Imagem copiada! Cola-a na mensagem com Cmd+V (ou Ctrl+V).'))
+    .catch(()=>hint('Descarrega a imagem e anexa-a à mensagem.'))}
+  catch(e){hint('Descarrega a imagem e anexa-a à mensagem.')}
+}
+$('save').onclick=()=>makeImage(b=>{
+  if(!b){alert('Para guardar o monstro, abre o site pelo link online (GitHub Pages).');return}
+  blob=b; $('shot').src=URL.createObjectURL(b); hint('');
+  $('share').hidden=!(navigator.canShare&&navigator.canShare({files:[getFile()]}));
+  $('modal').hidden=false;
+});
+$('close').onclick=()=>$('modal').hidden=true;
+$('modal').onclick=e=>{if(e.target.id==='modal')$('modal').hidden=true};
+$('share').onclick=()=>navigator.share({files:[getFile()],text:MSG}).catch(()=>{});
+$('dl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='my-monster.png';a.click()};
+$('wa').onclick=()=>{copyImage();window.open('https://wa.me/?text='+encodeURIComponent(MSG+' '+location.href),'_blank')};
+$('gm').onclick=()=>{copyImage();window.open('https://mail.google.com/mail/?view=cm&fs=1&su='+encodeURIComponent('O meu monstro')+'&body='+encodeURIComponent(MSG+'\n'+location.href),'_blank')};
 tiles();
 </script>
 </body>
