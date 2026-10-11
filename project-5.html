@@ -29,6 +29,9 @@
 .btn:disabled{opacity:.3;cursor:default}
 .row{display:flex;gap:10px}
 .row .btn{padding:12px 8px}
+.btn.solid{background:var(--fg);color:var(--bg)}
+.btn.solid:hover:not(:disabled){background:transparent;color:var(--fg)}
+.note{font-size:11px;text-transform:none;opacity:.8;min-height:1.2em}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px}
 .modal[hidden]{display:none}
 .card{position:relative;background:var(--bg);color:var(--fg);border:1.5px solid currentColor;border-radius:28px;padding:20px;width:100%;max-width:360px;max-height:94vh;overflow:auto}
@@ -68,7 +71,9 @@
       <div class="stage" id="stage"><div class="bg" id="bg"></div><div class="monster" id="monster"></div></div>
       <div class="right">
         <button class="btn" id="save">Save your monster</button>
+        <button class="btn solid" id="realize">Release your monster</button>
         <div class="row"><button class="btn" id="undo">← Back</button><button class="btn" id="redo">Next →</button></div>
+        <p class="note" id="note"></p>
       </div>
     </div>
   </main>
@@ -146,7 +151,7 @@ function monsterSVG(){
     (S.eyes!==null?`<g transform="translate(100 ${f.ey}) scale(${f.s})">${EYES[S.eyes]()}</g>`:'')+
     (S.mouth!==null?`<g transform="translate(100 ${f.my}) scale(${f.s})">${MOUTHS[S.mouth]()}</g>`:'')+`</svg>`;
 }
-function refresh(pop){
+function refresh(pop){ $('note').textContent='';
   $('bg').style.background=S.bg!==null?bgStyle(BGS[S.bg]):'transparent';
   $('monster').innerHTML=monsterSVG();
   if(pop){const m=$('monster');m.classList.remove('pop');void m.offsetWidth;m.classList.add('pop')}
@@ -218,6 +223,12 @@ $('dl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObject
 $('wa').onclick=()=>{copyImage();window.open('https://wa.me/?text='+encodeURIComponent(MSG+' '+location.href),'_blank')};
 $('gm').onclick=()=>{copyImage();window.open('https://mail.google.com/mail/?view=cm&fs=1&su='+encodeURIComponent('O meu monstro')+'&body='+encodeURIComponent(MSG+'\n'+location.href),'_blank')};
 tiles();
+// ---------- REALIZE: este monstro passa a ser o da página principal ----------
+$('realize').onclick=()=>{
+  if(S.shape===null){$('note').textContent='Pick a shape first.';return}
+  try{localStorage.setItem('monster',JSON.stringify({shape:S.shape,color:S.color,eyes:S.eyes,mouth:S.mouth}))}catch(e){}
+  location.href='index.html';
+};
 </script>
 </body>
 </html>
