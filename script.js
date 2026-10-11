@@ -119,12 +119,20 @@ addEventListener('touchmove', e => { const y = e.touches[0].clientY; target += (
     () => `<path d="M-26 -6Q0 4 26 -6Q22 22 0 22Q-22 22 -26 -6Z" fill="#fff" ${ST}/><path d="M-22 4Q0 12 22 4" fill="none" ${ST2}/>`,
     () => `<path d="M-20 -8Q0 -16 20 -8Q24 8 8 10Q6 22 -2 22Q-8 12 -20 -8Z" fill="#fff" ${ST}/>`];
 
-  // ---- um monstro diferente em cada visita ----
+  // ---- o monstro: o que o visitante criou no jogo, ou um ao calhas ----
   const pick = n => Math.floor(Math.random() * n);
-  const sh = SHAPES[pick(8)], f = sh.face;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">${sh.draw(COLORS[pick(8)])}` +
-    `<g transform="translate(100 ${f.ey}) scale(${f.s})"><g class="eyes">${EYES[pick(8)]()}</g></g>` +
-    `<g transform="translate(100 ${f.my}) scale(${f.s})">${MOUTHS[pick(8)]()}</g></svg>`;
+  let M = null;
+  try { M = JSON.parse(localStorage.getItem('monster')); } catch (e) {}
+  const ok = (v, n) => Number.isInteger(v) && v >= 0 && v < n;
+  const mine = M && ok(M.shape, 8);
+  const iSh = mine ? M.shape : pick(8);
+  const iCo = mine ? (ok(M.color, 8) ? M.color : 6) : pick(8);
+  const iEy = mine ? (ok(M.eyes, 8) ? M.eyes : null) : pick(8);
+  const iMo = mine ? (ok(M.mouth, 8) ? M.mouth : null) : pick(8);
+  const sh = SHAPES[iSh], f = sh.face;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">${sh.draw(COLORS[iCo])}` +
+    `<g transform="translate(100 ${f.ey}) scale(${f.s})"><g class="eyes">${iEy !== null ? EYES[iEy]() : ''}</g></g>` +
+    (iMo !== null ? `<g transform="translate(100 ${f.my}) scale(${f.s})">${MOUTHS[iMo]()}</g>` : '') + `</svg>`;
 
   // ---- estilo (injetado aqui para não mexeres no style.css) ----
   const css = document.createElement('style');
